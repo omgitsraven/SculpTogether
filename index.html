@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+	
+	<title>SculpTogether</title>
+	
+	
+	
+	
+	
+	<script src="https://cdn.rawgit.com/mrdoob/three.js/r84/build/three.js"></script>
+	<script src="http://sdk.altvr.com/libs/altspace.js/2.4.2/altspace.js"></script>
+	<script src="https://cdn.rawgit.com/oOblik/AltVRNC/master/dist/AltVRNC.min.js"></script>
+	
+	<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-database.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-storage.js"></script>
+	
+	
+	
+	<script>
+	function makeEnum(){
+		
+		// I'm just winging this according to my needs, I'm open to better approaches
+		
+		var newEnum = {};
+		newEnum._ORDEREDKEYS = [];
+		
+		for(var i=0; i<arguments.length; i++) {
+			var curKey = arguments[i];
+			newEnum[curKey] = {index:i,label:curKey};
+			newEnum._ORDEREDKEYS[i] = curKey;
+		}
+		
+		return newEnum;
+		
+	}
+	</script>
+	
+	
+	
+</head>
+<body style="display: none;">
+	
+	
+	
+	<table id="initialSection"><tr><td id="debugMsg">Click here to start</td></tr></table>
+	
+	
+	
+	<table id="controlsSection"><tbody><tr>
+		
+		
+		
+		<td id="controlsMain">
+		
+			<div id="enable">Enable</div>
+			
+			<div id="controlsMainRest">
+				
+				<div class="modesGroup">
+					<div class="modesGroupLabel">Draw</div>
+					<div class="modesGroupOptions">
+						<div id="modeDraw">Ribbons</div>
+						<div id="modeShape">Shapes</div>
+						<div id="modeErase">Erase</div>
+					</div>
+				</div>
+				<div class="modesGroup">
+					<div class="modesGroupLabel">Edit</div>
+					<div class="modesGroupOptions">
+						<div id="modeGrab">Grab</div>
+						<div id="modeSlide">Slide</div>
+						<div id="modeTurn">Turn</div>
+						<div id="modeStretch">Stretch</div>
+					</div>
+				</div>
+				<div class="modesGroup">
+					<div class="modesGroupOptions">
+						<div id="modeSave">Save</div>
+						<div id="modeLoad">Load</div>
+					</div>
+				</div>
+				<div class="modesGroup" id="moderationOptionsHolder">
+					<div class="modesGroupOptions">
+						<div id="modeModeration">Admin</div>
+					</div>
+				</div>
+				
+			</div>
+			
+		</td>
+		
+		
+		
+		<td id="controlsSub">
+			
+			<div id="handednessHolder">
+				<div id="controlsHandedness" class="item">
+					<div class="itemHeader">Main hand:</div>
+					<div class="itemButtons">
+						<div id="handednessLeft">Left</div>
+						<div id="handednessRight">Right</div>
+					</div>
+				</div>
+			</div>
+			
+			<div id="controlsColor" class="item">
+				<div class="itemHeader">Select color:</div>
+				<div id="hueSlider" class="colSlider">
+					<div class="colSliderInnerGrad" id="hueSliderGrad">&nbsp;</div>
+					<div class="colSliderMarker" id="hueMarker"></div>
+				</div>
+				<div id="satSlider" class="colSlider">
+					<div class="colSliderInnerGrad" id="satSliderGradBack">&nbsp;</div>
+					<div class="colSliderInnerGrad" id="satSliderGradFront">&nbsp;</div>
+					<div class="colSliderMarker" id="satMarker"></div>
+				</div>
+				<div id="litSlider" class="colSlider">
+					<div class="colSliderInnerGrad" id="litSliderGradBack">&nbsp;</div>
+					<div class="colSliderInnerGrad" id="litSliderGradFront">&nbsp;</div>
+					<div class="colSliderMarker" id="litMarker"></div>
+				</div>
+				<div id="colResult">&nbsp;</div>
+			</div>
+			
+			<div id="controlsStroke" class="item">
+				<div class="itemHeader">Stroke width:</div>
+				<div id="strokeWidthHolder"><input type="range" id="thicknessSlider" min="0" max="1" step="0.01"/></div>
+			</div>
+			
+			<div id="controlsShape" class="item">
+				<div class="itemHeader">Select shape:</div>
+				<table class="shapeOptions">
+					<tr>
+						<td id="shapeCube"><img src="shapeicons/cube.png" width="50" height="50"/></td>
+						<td id="shapeCylinder"><img src="shapeicons/cylinder.png" width="50" height="50"/></td>
+						<td id="shapeDonut"><img src="shapeicons/donut.png" width="50" height="50"/></td>
+					</tr><tr>
+						<td id="shapeBall"><img src="shapeicons/ball.png" width="50" height="50"/></td>
+						<td id="shapeCone"><img src="shapeicons/cone.png" width="50" height="50"/></td>
+						<td id="shapeRing"><img src="shapeicons/ring.png" width="50" height="50"/></td>
+					</tr><tr>
+						<td id="shapeBowl"><img src="shapeicons/bowl.png" width="50" height="50"/></td>
+						<td id="shapePyramid"><img src="shapeicons/pyramid.png" width="50" height="50"/></td>
+						<td id="shapePipe"><img src="shapeicons/pipe.png" width="50" height="50"/></td>
+					</tr>
+				</table>
+			</div>
+			
+			<div id="controlsSave">
+				
+				<div class="item">
+					<div class="itemHeader">Selection method:</div>
+					<div class="itemButtons">
+						<div id="selectionModeClick">Click</div>
+						<div id="selectionModeDrag">Drag</div>
+					</div>
+				</div>
+				
+				<div class="item">
+					<div class="itemHeader">Selectable:</div>
+					<div class="itemButtons" id="selectionWhoseHolder">
+						<div id="selectionWhoseMine">My Art Only</div>
+						<div id="selectionWhoseEveryone">Everyone's Art</div>
+					</div>
+				</div>
+				
+				<div class="item itemNoHeader">
+					<div class="itemButtons">
+						<button id="selectionFloodAll">Select All</button>
+						<button id="selectionFloodNone">Deselect All</button>
+					</div>
+				</div>
+				
+				<div class="item itemNoHeader">
+					<div class="itemButtons">
+						<button id="saveButton">Save Selection</button>
+					</div>
+				</div>
+				
+			</div>
+			
+		</td>
+		
+		
+		
+		<td id="controlsHelp">
+			
+			<div id="cursorEnableHelp">
+				<p>
+					In cursor mode, sculpting will take over all your mouse controls outside of the menu,
+					so if you want to teleport around or interact with other things,
+					you'll need to come back to this screen and turn sculpting back off.
+				</p>
+				<p>
+					You can turn sculpting on and off by clicking the button in the top left of this popup.
+				</p>
+			</div>
+			
+			<div id="generalHelp">
+				
+				<div class="controlHelp cursorHelp">
+					<div class="toolhelp toolhelpDraw">
+						Click + hold while moving the cursor
+						<br/>to draw ribbons in the air!
+						<br/><img src="manual/cursor_0.png"/>
+					</div>
+					<div class="toolhelp toolhelpShape">
+						Click + hold while moving the cursor
+						</br>to make a shape in the air in front of you!
+						<br/><img src="manual/cursor_1.png"/>
+					</div>
+					<div class="toolhelp toolhelpErase">
+						Point the cursor at something you drew,
+						<br/>then (when it's blinking) click to delete it.
+						<br/><img src="manual/cursor_2.png"/>
+					</div>
+					
+					<div class="toolhelp toolhelpSlide">
+						Point and click on something you drew,
+						<br/>to make the tool cube appear.
+						<br/><img src="manual/cursor-demo-cube-appear.png" height="180"/>
+						<br/>
+						<br/>Point at one of the sides of the cube
+						<br/>to decide what direction you want to move the shape,
+						<br/>then click+drag to move it!
+						<br/><img src="manual/cursor-demo-move.png" height="160"/>
+					</div>
+					<div class="toolhelp toolhelpTurn">
+						Point and click on something you drew,
+						<br/>to make the tool cube appear.
+						<br/><img src="manual/cursor-demo-cube-appear.png" height="180"/>
+						<br/>
+						<br/>Point at one of the sides of the cube
+						<br/>to decide how you want to rotate the shape,
+						<br/>then click+drag around the outside of the dial!
+						<br/><img src="manual/cursor-demo-rotate.png"/>
+					</div>
+					<div class="toolhelp toolhelpStretch">
+						Point and click on something you drew,
+						<br/>to make the tool cube appear.
+						<br/><img src="manual/cursor-demo-cube-appear.png" height="180"/>
+						<br/>
+						<br/>Point at one of the sides of the cube
+						<br/>to decide which way you want to stretch the shape,
+						<br/>then click+drag to stretch it!
+						<br/><img src="manual/cursor-demo-stretch.png"/>
+					</div>
+				</div>
+				
+				<div class="controlHelp trackedHelp">
+					<div class="toolhelp toolhelpDraw">
+						Hold the 'grip' button
+						<br/>and move your hand
+						<br/>to draw ribbons in the air!
+						<br/>
+						<br/><img src="manual/tracked_ribbon.png"/>
+					</div>
+					<div class="toolhelp toolhelpShape">
+						Bring your hands together,
+						<br/>then hold the 'grip' button on both hands,
+						<br/>and spread your hands again
+						<br/>to make a shape in the air!
+						<br/>
+						<br/><img src="manual/tracked_shapes.png"/>
+					</div>
+					<div class="toolhelp toolhelpErase">
+						Delete things you drew by
+						<br/>pointing and clicking on them
+						<br/>with the Altspace cursor.
+						<br/><img src="manual/select.png" height="180"/>
+					</div>
+					<div class="toolhelp toolhelpGrab">
+						Use the Altspace cursor to
+						<br/>select something you drew, by
+						<br/>pointing and clicking on it.
+						<br/><img src="manual/select.png" height="180"/>
+						<br/>
+						<br/>Then hold the grip button to pick it up
+						<br/>and move it (even from a distance).
+						<br/>
+						<br/>Grip with both hands
+						<br/>to shrink or grow it.
+					</div>
+					<div class="toolhelp toolhelpSlide">
+						Use the Altspace cursor to
+						<br/>select something you drew, by
+						<br/>pointing and clicking on it.
+						<br/><img src="manual/select.png" height="160"/>
+						<br/>
+						<br/>Then, align your hand with
+						<br/>one of the three directions,
+						<br/>and grab the rod to slide it back and forth.
+						<br/><img src="manual/tracked-slide.png" height="180"/>
+					</div>
+					<div class="toolhelp toolhelpTurn">
+						Use the Altspace cursor to
+						<br/>select something you drew, by
+						<br/>pointing and clicking on it.
+						<br/><img src="manual/select.png" height="160"/>
+						<br/>
+						<br/>Then, align your hand with
+						<br/>one of the three directions,
+						<br/>and grab the rod to pivot around it.
+						<br/><img src="manual/tracked-turn.png" height="180"/>
+					</div>
+					<div class="toolhelp toolhelpStretch">
+						Use the Altspace cursor to
+						<br/>select something you drew, by
+						<br/>pointing and clicking on it.
+						<br/><img src="manual/select.png" height="160"/>
+						<br/>
+						<br/>Then, align your hand with
+						<br/>one of the three directions,
+						<br/>and grab the rod to slide it back and forth.
+						<br/><img src="manual/tracked-stretch.png" height="180"/>
+					</div>
+				</div>
+				
+				<div class="toolhelp toolhelpModeration">
+					
+					<div class="verticalTop">
+						
+						<div id="controlsPermissionMode" class="item">
+							<div class="itemHeader">Drawing permissions:</div>
+							<div class="permissionButtons">
+								<div id="permissionBlacklist">All Users Can Draw</div>
+								<div id="permissionWhitelist">Allowed Users Only</div>
+							</div>
+						</div>
+						
+						<div id="controlsPermissionList" class="item scrollHaver">
+							<div class="itemHeader">Allowed users:</div>
+							<div id="permissionBlacklistMode">(everyone)</div>
+							<div id="permissionWhitelistMode">
+								<div id="permissionWhitelistUsers"></div>
+								<button id="permissionAddBtn">Allow new user...</button>
+							</div>
+						</div>
+						
+						<div id="adminEraseUserList" class="item scrollHaver">
+							<div class="itemHeader">Erase user's art:</div>
+							<div id="existingArtList"></div>
+						</div>
+						
+					</div>
+					
+				</div>
+				
+				<div class="toolhelp toolhelpSave">
+					
+					<div id="selectionClickHelp">
+						Click on parts of your art to select them,
+					</div>
+					<div id="selectionDragHelp">
+						<div class="controlHelp cursorHelp">
+							Click and drag to stretch out selection spheres,
+							<br/>to add parts of your art to your selection;
+						</div>
+						<div class="controlHelp trackedHelp">
+							Hold the grip button on both hands
+							<br/>to make a selection sphere around some of your art,
+							<br/>then release the grip to add its contents to your selection;
+						</div>
+					</div>
+					
+					<br/>then click the Save Selection button
+					<br/>to save the selected (blinking) art
+					<br/>so you can load copies of it later!
+					
+				</div>
+				
+				<div class="toolhelp toolhelpLoad">
+					<div class="verticalTop">
+						
+						<div class="item scrollHaver">
+							<div class="itemHeader">Archived art:</div>
+							<div id="archivedArtList"></div>
+						</div>
+						
+						<div>
+							<div id="loadAsChoice" class="item">
+								<div class="itemHeader">Load as:</div>
+								<div class="itemButtons itemButtonsWide">
+									<div id="loadAsArt">Art</div>
+									<div id="loadAsCostume">Costume</div>
+								</div>
+							</div>
+							
+							<div id="wearOnChoice" class="item">
+								<div class="itemHeader">For body part:</div>
+								<div class="itemButtons itemButtonsWide">
+									<div id="wearOnHead">Head</div>
+									<div id="wearOnBody">Body</div>
+									<div id="wearOnHand">Hand</div>
+								</div>
+							</div>
+						</div>
+						
+						<div id="wearOnHelp">
+								 After loading a costume piece,
+							<br/>you can use the edit tools to
+							<br/>select the pedestal and move it,
+							<br/>or select the art and change how
+							<br/>it will fit when people wear it.
+						</div>
+						
+					</div>
+				</div>
+				
+			</div>
+			
+		</td>
+		
+		
+		
+		
+	</tr></tbody></table>
+	
+	
+	<div id="overlayHolder">
+		
+		<div id="userOverlay">
+			<div id="userOverlayTitle">Grant drawing permissions to:</div>
+			<div id="userOverlayList"></div>
+			<button id="userOverlayCancel">Cancel</button>
+		</div>
+		
+		<div id="deletionConfirmOverlay">
+			<div id="deletionConfirmTitle">Are you sure you want to delete the art of:</div>
+			<div id="deletionConfirmNick"></div>
+			<div id="deletionConfirmId"></div>
+			<div id="deletionConfirmFootnote">(The art that will be deleted is currently blinking)</div>
+			<button id="deletionConfirmNo">No</button>
+			<button id="deletionConfirmYes">Yes</button>
+		</div>
+		
+		<div id="reloadConfirmOverlay">
+			<div id="reloadConfirmTitle">An update to this app has just gone live!</div>
+			<div id="reloadConfirmBody">Please wait, the app will refresh automatically...</div>
+		</div>
+		
+		<div id="saveNameOverlay">
+			<div id="saveNameTitle">Please title the art you're saving, by clicking here:</div>
+			<div><input type="text" id="saveNameField"/></div>
+			<div>
+				<button id="saveNameOk">Save</button>
+				<button id="saveNameDummy" disabled="true">Saving...</button>
+			</div>
+		</div>
+		
+		<div id="nothingToSaveOverlay">
+			<div id="nothingToSaveTitle">Nothing selected!</div>
+			<div id="nothingToSaveBody">Please use the tools to select the art that you're trying to save.</div>
+			<button id="nothingToSaveOk">Oops.</button>
+		</div>
+		
+	</div>
+	
+	
+	<script>
+	
+	var CURRENTVERSION = 11;
+	
+	
+	
+	var headTag = document.getElementsByTagName("head")[0];
+	
+	var cssLink = document.createElement("link");
+	cssLink.setAttribute("rel","stylesheet");
+	cssLink.setAttribute("type","text/css");
+	cssLink.setAttribute("href","index.css?cachebust="+CURRENTVERSION);
+	headTag.appendChild(cssLink);
+	
+	
+	
+	var jsFilesToLoad = ["main","utils","palette","sculpt","io","controls_cursor","controls_tracked","credentials_debug"];
+	
+	var filesReadyCount=0;
+	function fileReady(){
+		filesReadyCount++;
+		if (filesReadyCount == jsFilesToLoad.length) {
+			
+			SETUP_main();
+			
+		}
+	}
+	
+	for(var i=0; i<jsFilesToLoad.length; i++){
+		
+		var curFilename = jsFilesToLoad[i];
+		
+		var curScript = document.createElement("script");
+		curScript.setAttribute("src",curFilename+".js?cachebust="+CURRENTVERSION);
+		headTag.appendChild(curScript);
+		
+	}
+	
+	</script>
+	
+	
+</body>
+</html>
